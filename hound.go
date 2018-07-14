@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	appName           = "hound-cli"
+	appName           = "houndify-cli"
 	houndifyClientId  = "***REMOVED***"
 	houndifyClientKey = "***REMOVED***"
 	unitsMetric       = "metric"

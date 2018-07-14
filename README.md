@@ -1,4 +1,4 @@
-# hound-cli
+# houndify-cli
 
 Command-line interface to SoundHound's Houndify API.
 

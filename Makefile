@@ -1,4 +1,4 @@
-# Simple Makefile for hound-cli
+# Simple Makefile for houndify-cli
 
 all:
 	go get github.com/casimir/xdg-go
