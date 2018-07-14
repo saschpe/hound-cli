@@ -18,6 +18,8 @@ const (
 	appName           = "hound-cli"
 	houndifyClientId  = "***REMOVED***"
 	houndifyClientKey = "***REMOVED***"
+	unitsMetric       = "metric"
+	unitsImperial     = "imperial"
 )
 
 // Creates a pseudo unique / random string.
@@ -61,6 +63,7 @@ func readConfig() *viper.Viper {
 	v.SetConfigType("yaml")
 
 	v.SetDefault("User", userId())
+	v.SetDefault("Units", unitsMetric)
 
 	err := v.ReadInConfig() // Find and read the config file
 	if err != nil {
@@ -70,14 +73,34 @@ func readConfig() *viper.Viper {
 	return v
 }
 
-func main() {
-	flagVerbose := flag.Bool("v", false, "Verbose mode")
-	flag.Parse()
+func unitsToHoundify(units string) string {
+	switch units {
+	case "imperial":
+		return "US"
+	default:
+		return "METRIC"
+	}
+}
 
+func main() {
 	log.SetFlags(0)
+
+	unitSystems := map[string]bool{unitsMetric: true, unitsImperial: true}
+
+	// Command line arguments
+	flagVerbose := flag.Bool("v", false, "Verbose mode")
+	flagUnits := flag.String("units", "", "Unit system, '"+unitsMetric+"' or '"+unitsImperial+"'")
+	flag.Parse()
 
 	// Configuration
 	config := readConfig()
+
+	if *flagUnits != "" {
+		if _, ok := unitSystems[*flagUnits]; ok != true {
+			panic(*flagUnits + " not supported")
+		}
+		config.Set("Units", *flagUnits)
+	}
 
 	// Houndify
 	houndifyClient := houndify.Client{
@@ -93,11 +116,14 @@ func main() {
 		query = "what can you do?"
 	}
 
+	requestInfoFields := make(map[string]interface{})
+	requestInfoFields["UnitPreference"] = unitsToHoundify(config.GetString("Units"))
+
 	req := houndify.TextRequest{
 		Query:             query,
 		UserID:            config.GetString("User"),
 		RequestID:         randString(),
-		RequestInfoFields: make(map[string]interface{}),
+		RequestInfoFields: requestInfoFields,
 	}
 
 	serverResponse, err := houndifyClient.TextSearch(req)
