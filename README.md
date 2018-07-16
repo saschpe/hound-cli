@@ -14,6 +14,10 @@ or:
 hound what\'s the weather today
 ```
 
+# Attribution
+Uses *api.ipify.org* to retrieve the external / public IP and
+*api.ipstack.com* to fetch geo location data to augment queries to houndify.
+
 # License
 
     Copyright 2018 Sascha Peilicke
