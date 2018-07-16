@@ -2,9 +2,12 @@ package main
 
 import (
 	"crypto/rand"
+	"encoding/json"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"log"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
@@ -15,11 +18,14 @@ import (
 )
 
 const (
-	appName           = "houndify-cli"
-	houndifyClientId  = "***REMOVED***"
-	houndifyClientKey = "***REMOVED***"
-	unitsMetric       = "metric"
-	unitsImperial     = "imperial"
+	appName             = "houndify-cli"
+	houndifyClientId    = "***REMOVED***"
+	houndifyClientKey   = "***REMOVED***"
+	ipstackApiAccessKey = "***REMOVED***"
+	ipstackApiUrl       = "http://api.ipstack.com"
+	ipifyApiUrl         = "https://api.ipify.org?format=json"
+	unitsMetric         = "metric"
+	unitsImperial       = "imperial"
 )
 
 // Creates a pseudo unique / random string.
@@ -82,6 +88,41 @@ func unitsToHoundify(units string) string {
 	}
 }
 
+func httpGet(url string) []byte {
+	resp, err := http.Get(url)
+	if err != nil {
+		panic(err)
+	}
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		panic(err)
+	}
+	return body
+}
+
+type ExternalIp struct {
+	IP string
+}
+
+type Location struct {
+	Latitude     float32
+	Longitude    float32
+	Country_Name string
+}
+
+func location() Location {
+	// External IP first
+	var externalIP ExternalIp
+	json.Unmarshal(httpGet(ipifyApiUrl), &externalIP)
+
+	// Geolocaiton next
+	body := httpGet(ipstackApiUrl + "/" + externalIP.IP + "?access_key=" + ipstackApiAccessKey)
+	var location Location
+	json.Unmarshal(body, &location)
+	return location
+}
+
 func main() {
 	log.SetFlags(0)
 
@@ -116,8 +157,13 @@ func main() {
 		query = "what can you do?"
 	}
 
+	location := location()
+
 	requestInfoFields := make(map[string]interface{})
 	requestInfoFields["UnitPreference"] = unitsToHoundify(config.GetString("Units"))
+	requestInfoFields["Latitude"] = location.Latitude
+	requestInfoFields["Longitude"] = location.Longitude
+	requestInfoFields["Country"] = location.Country_Name
 
 	req := houndify.TextRequest{
 		Query:             query,
