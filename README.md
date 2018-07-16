@@ -1,5 +1,4 @@
 # houndify-cli
-
 Command-line interface to SoundHound's Houndify API.
 
 # Usage
@@ -9,6 +8,11 @@ Simply start talking to *hound*:
 hound hi
 ```
 
+or:
+
+```bash
+hound what\'s the weather today
+```
 
 # License
 
